@@ -50,6 +50,8 @@ for i in range(START_INDEX, FIN_INDEX):
         np.put(alldata[i], 0, i)
         angry_list.append(alldata[i].astype(np.float32))
 print("scan done")
+
+
 def emotion_scatter_plot(list, color):
     list = np.array(list)
     if list.shape[0] > 0:

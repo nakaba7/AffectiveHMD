@@ -1,45 +1,28 @@
 import numpy as np
-from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
 import statistics
-import matplotlib.pyplot as plt
 import pandas as pd
-import torch
-from torch import nn, Tensor
-import torch.nn.functional as F
 
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-
-import math
-from sklearn.metrics import confusion_matrix
-from collections import Counter
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.model_selection import train_test_split
-import itertools
 
 SENSOR_NUM = 16
 HEAD_DIRECTION_DATA_NUM = 2
 
-def delete_spike(filename):
+def delete_spike(inputfilename, participantname):
     """
-    datasize : 訓練＋評価データのサイズ
-    data_length : 過去何個分のデータを参考にするか
-    train_x : 時系列データをセットにした全データの3次元テンソル
-    train_t : 予想されたテンソルの正解ラベル
+    時刻iのデータがスパイクと判定された場合、i-2, i-1, i, i+1, i+2のデータの中央値とすることで、スパイク除去をする.
+    データと中央値の絶対値の差が30以上の場合にスパイクと判定される.
+
+    入力: ラベル, 表情, 頭部姿勢の入ったcsvファイル
+    出力: スパイク除去のcsvファイル
     """
     
-    df = pd.read_csv(filename, header=None)
+    df = pd.read_csv(inputfilename, header=None)
     df = df.dropna(how="all", axis=0).dropna(how="all", axis=1)#Delete rows and columns with NaNs
-    sensor_data = df.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,19]]#get data without 1st row
+    value_data = df.iloc[:, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,19]]#get data without 1st row
     label_data = df.iloc[:, 0]#get label in 1st row
-    #print(sensor_data)
-    value_data, label_data = sensor_data[:], label_data[:]
     x_train_list = value_data.to_numpy()
-    #print(label_data.to_numpy().shape)  
     y_train_list = label_data.to_numpy()
    
+    #初期化
     prev_sensor_values = x_train_list[0]
     prev_prev_sensor_values = x_train_list[0]
     next_sensor_values = x_train_list[1]
@@ -63,6 +46,4 @@ def delete_spike(filename):
         if i!=0 :prev_prev_sensor_values = x_train_list[i-1]
     labels = y_train_list.reshape(y_train_list.shape[0],1)
     newdata = np.concatenate([labels, x_train_list], 1)
-    np.savetxt('C:\\Users\\yukin\\Downloads\\Median_Nakabayashi_Test.csv',newdata, fmt="%s", delimiter=',')
-    
-delete_spike("C:\\Users\\yukin\\Downloads\\Nakabayashi_Test_DataSet.csv")
+    np.savetxt('.\\Spike_Removed_csv\\Median_{0}.csv'.format(participantname),newdata, fmt="%s", delimiter=',')
