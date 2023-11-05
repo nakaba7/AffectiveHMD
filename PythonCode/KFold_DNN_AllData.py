@@ -16,6 +16,7 @@ import openpyxl
 import itertools
 import wandb
 import statistics
+from Evaluation_Metric import macro_precision_score, macro_recall_score, macro_f1_score
 
 SENSOR_NUM = 16
 BATCH_SIZE = 64
@@ -32,35 +33,6 @@ xlsx_filename = "C:\\Users\\yukin\\Downloads\\MachineLearningResult\\AllData_DNN
 book.save(xlsx_filename)
 wb = openpyxl.load_workbook(xlsx_filename)
 ws = wb['Sheet']
-
-def macro_recall_score(cm):
-    recall_list=[]
-    for i in range(len(cm[0])):
-        row_list=[]
-        for j in range(len(cm[0])):
-            row_list.append(cm[i][j])
-        #print("sum", sum(row_list), "分母", cm[i][i])
-        tmp_recall = cm[i][i] / sum(row_list) 
-        #print("i",i,"recall", tmp_recall)
-        recall_list.append(tmp_recall)
-    return sum(recall_list)/len(recall_list)
-
-def macro_precision_score(cm):
-    precision_list=[]
-    for i in range(len(cm[0])):
-        column_list=[]
-        for j in range(len(cm[0])):
-            column_list.append(cm[j][i])
-        #print("sum", sum(row_list), "分母", cm[i][i])
-        tmp_precision = cm[i][i] / sum(column_list) 
-        #print("i",i,"recall", tmp_recall)
-        precision_list.append(tmp_precision)
-    return sum(precision_list)/len(precision_list)
-
-def macro_f1_score(cm):
-    precision = macro_precision_score(cm)
-    recall = macro_recall_score(cm)
-    return 2 / (1/precision + 1/recall)
 
 def zscore(x, axis = None):#標準化
     xmean = np.mean(x, axis=axis, keepdims=True)

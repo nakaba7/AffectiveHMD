@@ -1,7 +1,4 @@
-import numpy as np
-from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix
 import torch
 import torch.nn.functional as F
@@ -9,22 +6,20 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from torch.optim import SGD
-import pandas as pd
 import numpy as np
 from EarlyStopping import EarlyStopping
 import openpyxl
 import itertools
 import wandb
 import statistics
+from Evaluation_Metric import macro_precision_score, macro_recall_score, macro_f1_score
+from MakeDataSet import mkDataSet
+from LSTMModel import LSTMClassifier
 
-SENSOR_NUM = 16
 BATCH_SIZE = 64
 OPTIMIZER_LEARNING_RATE = 1.0e-4
-HIDDEN_DIM = 128
 EPOCH_NUM = 500
-SEQUENCE_TENSOR_LENGTH = 20
 LABEL_SMOOTHING = 0.1
-DROPOUT = 0.3
 MODELPATH = "KFold_LSTM_AllData.pth"
 K = 10
 book = openpyxl.Workbook()
@@ -33,127 +28,11 @@ book.save(xlsx_filename)
 wb = openpyxl.load_workbook(xlsx_filename)
 ws = wb['Sheet']
 
-def macro_recall_score(cm):
-    recall_list=[]
-    for i in range(len(cm[0])):
-        row_list=[]
-        for j in range(len(cm[0])):
-            row_list.append(cm[i][j])
-        #print("sum", sum(row_list), "分母", cm[i][i])
-        tmp_recall = cm[i][i] / sum(row_list) 
-        #print("i",i,"recall", tmp_recall)
-        recall_list.append(tmp_recall)
-    return sum(recall_list)/len(recall_list)
-
-def macro_precision_score(cm):
-    precision_list=[]
-    for i in range(len(cm[0])):
-        column_list=[]
-        for j in range(len(cm[0])):
-            column_list.append(cm[j][i])
-        #print("sum", sum(row_list), "分母", cm[i][i])
-        tmp_precision = cm[i][i] / sum(column_list) 
-        #print("i",i,"recall", tmp_recall)
-        precision_list.append(tmp_precision)
-    return sum(precision_list)/len(precision_list)
-
-def macro_f1_score(cm):
-    precision = macro_precision_score(cm)
-    recall = macro_recall_score(cm)
-    return 2 / (1/precision + 1/recall)
-
-def zscore(x, axis = None):#標準化
-    xmean = np.mean(x, axis=axis, keepdims=True)
-    xstd  = np.std(x, axis=axis, keepdims=True)
-    zscore = (x-xmean)/xstd
-
-    return zscore
-
-def mkDataSet(filename, headdatanum, is_normalize = False):
-    """
-    datasize : 訓練＋評価データのサイズ
-    data_length : 過去何個分のデータを参考にするか
-    train_x : 時系列データをセットにした全データの3次元テンソル
-    train_t : 予想されたテンソルの正解ラベル
-    """
-    print("dataset filename = {}".format(filename))
-    data_length = SEQUENCE_TENSOR_LENGTH
-    df = pd.read_csv(filename, header=None)
-    df = df.dropna(how="all", axis=0).dropna(how="all", axis=1)#Delete rows and columns with NaNs
-    sensor_data = df.iloc[:, 1:SENSOR_NUM + headdatanum + 1]#get data without 1st row
-    label_data = df.iloc[:, 0]#get label in 1st row
-
-    #if is_normalize == True:#列で正規化
-     #   sensor_data = (sensor_data - np.mean(sensor_data, axis = 0)) / np.std(sensor_data, axis = 0)
-    #print(sensor_data)
-    #x_train, y_train = sensor_data[:data_size], label_data[:data_size]
-    value_data, label_data = sensor_data[:], label_data[:]
-    data_size = label_data.to_numpy().shape[0]
-    x_train_list = value_data.to_numpy().tolist()       
-    y_train_list = label_data.to_numpy().tolist()
-    train_x = []
-    train_t = []
-    data_size -= data_length
-    for i in range(data_size):
-        isStopToken = False
-        tmplist = []#sequence data list
-        for j in range(data_length):
-            if y_train_list[i + j] == 'a' or y_train_list[i+data_length] == 'a':
-              isStopToken = True
-              break
-            tmplist.append(x_train_list[i + j])
-        if isStopToken:
-            continue
-        train_x.append(tmplist)
-        train_t.append(y_train_list[i+data_length])  #時系列データ数+1番目のラベルを予測
-    
-    train_x = np.array(train_x)
-    train_t = np.array(train_t)
-    train_t = train_t.astype(np.int32)
-    train_x = train_x.astype(np.float32)
-    if is_normalize == True:#列で正規化
-        #train_x = (train_x - np.mean(data_list_copy, axis = 0)) / np.std(data_list_copy, axis = 0)
-        x0 = train_x.shape[0]
-        x1 = train_x.shape[1]
-        
-        train_x = train_x.reshape([x0*x1, SENSOR_NUM + headdatanum])
-        
-        train_x = train_x.astype(np.float32)
-        
-        train_x = zscore(train_x, axis = 0)
-        train_x = train_x.reshape([x0, x1, SENSOR_NUM + headdatanum]) 
-    
-    return train_x, train_t
 
 def TrainandVal(filename, headdatanum, start_row, start_column):
     wandb.init(project="Affective HMD LSTM")
-    class LSTMClassifier(nn.Module):
-        # モデルで使う各ネットワークをコンストラクタで定義
-        def __init__(self):
-            super(LSTMClassifier, self).__init__()
-            self.input_layer = nn.Linear(SENSOR_NUM+headdatanum, HIDDEN_DIM)
-            self.lstm = nn.LSTM(HIDDEN_DIM, HIDDEN_DIM, batch_first=True)
-            self.output_layer = nn.Linear(HIDDEN_DIM, 5)
-            self.dropout = nn.Dropout(DROPOUT)
-            self.batchnorm = nn.BatchNorm1d(HIDDEN_DIM)
-
-        def forward(self, x):
-            b, s, d = x.shape
-            x = x.reshape(b*s, d)
-            x = self.input_layer(x)#入力層
-            x = x.reshape(b, s, HIDDEN_DIM)
-            x = x.permute(0,2,1)
-            x = self.batchnorm(x)#バッチ正規化(時系列方向なのでLayer Normかも)
-            x = x.permute(0,2,1)
-            x = F.relu(x)
-            x = self.dropout(x)#ドロップアウト
-            x, _ = self.lstm(x)#LSTM層
-            output = F.relu(x[:,-1,:])
-            output = self.dropout(output)#ドロップアウト
-            output = self.output_layer(output)#出力層
-            #x = F.softmax(x, dim=1)
-            return output
-    data, target = mkDataSet(filename, headdatanum, is_normalize=False)
+    
+    data, target = mkDataSet(filename, headdatanum,is_sequence_dataset=True ,is_normalize=True)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     train_acc_list = []
     val_acc_list = []
@@ -162,7 +41,7 @@ def TrainandVal(filename, headdatanum, start_row, start_column):
     recall_list = []
     f_list = []
 
-    for i in range(9,K):#10回で交差検証
+    for i in range(K):#10回で交差検証
         train_val_sensor, test_sensor, train_val_label, test_label = train_test_split(data, target, random_state=i, test_size=0.2)#訓練＋評価とテストに分ける
         val_size = int(test_label.shape[0]/2)
         train_sensor, val_sensor, train_label, val_label = train_test_split(train_val_sensor, train_val_label, random_state=0, test_size=val_size)#訓練と評価に分ける
