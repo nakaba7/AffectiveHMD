@@ -1,11 +1,15 @@
 import numpy as np
 import torch
-import torch.nn.functional as F
-import torch.nn as nn
 import time
 import numpy as np
 from SerialConnection16 import SerialConnection
 import socket
+from LSTMModel import LSTMClassifier
+
+"""
+学習したLSTMを使って, リアルタイムにセンサ値から表情を識別するデモ
+Unityとシリアル通信を行う
+"""
 
 SENSOR_NUM = 16
 BATCH_SIZE = 64
@@ -24,36 +28,9 @@ client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 MODELPATH = "Demo_LSTM_Nakabayashi.pth"
 
-class LSTMClassifier(nn.Module):
-        # モデルで使う各ネットワークをコンストラクタで定義
-        def __init__(self):
-            super(LSTMClassifier, self).__init__()
-            self.input_layer = nn.Linear(SENSOR_NUM, HIDDEN_DIM)
-            self.lstm = nn.LSTM(HIDDEN_DIM, HIDDEN_DIM, batch_first=True)
-            self.output_layer = nn.Linear(HIDDEN_DIM, 5)
-            self.dropout = nn.Dropout(DROPOUT)
-            self.batchnorm = nn.BatchNorm1d(HIDDEN_DIM)
-
-        def forward(self, x):
-            b, s, d = x.shape
-            x = x.reshape(b*s, d)
-            x = self.input_layer(x)#入力層
-            x = x.reshape(b, s, HIDDEN_DIM)
-            x = x.permute(0,2,1)
-            x = self.batchnorm(x)#バッチ正規化(時系列方向なのでLayer Normかも)
-            x = x.permute(0,2,1)
-            x = F.relu(x)
-            x = self.dropout(x)#ドロップアウト
-            x, _ = self.lstm(x)#LSTM層
-            output = F.relu(x[:,-1,:])
-            output = self.dropout(output)#ドロップアウト
-            output = self.output_layer(output)#出力層
-            #x = F.softmax(x, dim=1)
-            return output
-
 serialconnection = SerialConnection("COM7",115200)
 
-model = LSTMClassifier().to(device)
+model = LSTMClassifier(headdatanum=2).to(device)
 
 model.load_state_dict(torch.load(MODELPATH))
 model.eval()
@@ -74,9 +51,7 @@ while(1):
     #if len(sequencedata) == 21:#時系列データ作成
     if count > 20:
         sequencedata = np.array(sequencedata).reshape(1,20,16)
-
         inputs = torch.from_numpy(sequencedata).float()#時系列データをテンソルへ
-        
         outputs = model(inputs.to(device))#モデルへ入力
         _, preds = torch.max(outputs, 1)#予測ラベル
         preds = str(preds)

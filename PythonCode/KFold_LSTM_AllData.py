@@ -1,12 +1,9 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-from torch.optim import SGD
-import numpy as np
 from EarlyStopping import EarlyStopping
 import openpyxl
 import itertools
@@ -72,7 +69,7 @@ def TrainandVal(filename, headdatanum, start_row, start_column):
         valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True)
         test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
-        model = LSTMClassifier().to(device)
+        model = LSTMClassifier(headdatanum).to(device)
         # 5. 損失関数の定義
         criterion = nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING)
 

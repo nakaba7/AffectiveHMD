@@ -21,7 +21,7 @@ def delete_spike(inputfilename, participantname):
     label_data = df.iloc[:, 0]#get label in 1st row
     x_train_list = value_data.to_numpy()
     y_train_list = label_data.to_numpy()
-   
+    
     #初期化
     prev_sensor_values = x_train_list[0]
     prev_prev_sensor_values = x_train_list[0]

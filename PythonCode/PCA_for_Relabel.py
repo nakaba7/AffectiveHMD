@@ -1,22 +1,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
 import pandas as pd
-import torch
-from torch import nn, Tensor
-import torch.nn.functional as F
-
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-
-import math
-from sklearn.metrics import confusion_matrix
-from collections import Counter
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.model_selection import train_test_split
-import itertools
 
 SENSOR_NUM = 16
 HEAD_DIRECTION_DATA_NUM = 2
@@ -120,8 +105,6 @@ def RelabelByPCA(x, labels):#データセット全体に対し，表情遷移1�
     #plt.show()
     new_labels_list.append(new_labels)
 
-
-      
 #print("target type",type(target))
 for i in range(data.shape[0]):#全ての時系列データセットに対してPCAを実行
     RelabelByPCA(data[i],target[i])
