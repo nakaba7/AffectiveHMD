@@ -1,6 +1,11 @@
 import numpy as np
 import pandas as pd
 
+"""
+学習データセットを作る関数
+時系列データも作成可能
+"""
+
 SENSOR_NUM = 16
 SEQUENCE_TENSOR_LENGTH = 20
 
@@ -30,7 +35,7 @@ def mkDataSet(filename, headdatanum, is_sequence_dataset = False, is_normalize =
     label_data = df.iloc[:, 0]#get label in 1st row
 
     #if is_normalize == True:#列で正規化
-     #   sensor_data = (sensor_data - np.mean(sensor_data, axis = 0)) / np.std(sensor_data, axis = 0)
+    #   sensor_data = (sensor_data - np.mean(sensor_data, axis = 0)) / np.std(sensor_data, axis = 0)
     #print(sensor_data)
     #x_train, y_train = sensor_data[:data_size], label_data[:data_size]
     value_data, label_data = sensor_data[:], label_data[:]

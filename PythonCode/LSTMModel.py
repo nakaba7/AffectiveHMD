@@ -13,7 +13,6 @@ HIDDEN_DIM = 128
 DROPOUT = 0.3 
 
 class LSTMClassifier(nn.Module):
-        # モデルで使う各ネットワークをコンストラクタで定義
         def __init__(self, headdatanum):
             super(LSTMClassifier, self).__init__()
             self.input_layer = nn.Linear(SENSOR_NUM + headdatanum, HIDDEN_DIM)
@@ -28,7 +27,7 @@ class LSTMClassifier(nn.Module):
             x = self.input_layer(x)#入力層
             x = x.reshape(b, s, HIDDEN_DIM)
             x = x.permute(0,2,1)
-            x = self.batchnorm(x)#バッチ正規化(時系列方向なのでLayer Normかも)
+            x = self.batchnorm(x)#バッチ正規化(時系列方向)
             x = x.permute(0,2,1)
             x = F.relu(x)
             x = self.dropout(x)#ドロップアウト

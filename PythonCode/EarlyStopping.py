@@ -2,7 +2,9 @@ import numpy as np
 import torch
 
 class EarlyStopping:
-    """earlystoppingクラス"""
+    """
+    lossが下がらなくなった場合に学習を早期終了させるクラス
+    """
 
     def __init__(self, patience=5, verbose=True, path='transformer_model.pth'):
         """引数:最小値の非更新数カウンタ、表示設定、モデル格納path"""

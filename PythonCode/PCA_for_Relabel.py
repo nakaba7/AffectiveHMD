@@ -1,36 +1,24 @@
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
 import pandas as pd
-import torch
-from torch import nn, Tensor
-import torch.nn.functional as F
 
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-
-import math
-from sklearn.metrics import confusion_matrix
-from collections import Counter
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.model_selection import train_test_split
-import itertools
+"""
+正解ラベルを正しく貼り直す．このファイルを実行することで貼り直しが可能．
+"""
 
 SENSOR_NUM = 16
 HEAD_DIRECTION_DATA_NUM = 2
 SEQUENCE_RANGE = 30
+participant_name = "Nakabayashi" #スパイク除去をした誰のデータのラベル貼り直しをするか ./Spike_Removed_csv/Median_{participant_name}.csv 
 
 label_change_index_list = []#ラベルの変わった直後の全インデックスを保存
 new_labels_list = []#新しいラベルを表情遷移1回分ごとに区切ったデータを全セット格納
 
 def mkSequenceDataforPCA(filename, sequence_range):#[[SEQUENCE_RANGE*2個の18次元連続データ], [同じ]...]をtrain_xとして返す．学習時とは違い，データ間に被っている18次元データなし．new_targetは1次元全ラベルデータのコピー用
     """
-    datasize : 訓練＋評価データのサイズ
-    data_length : 過去何個分のデータを参考にするか
-    train_x : 時系列データをセットにした全データの3次元テンソル
-    train_t : 予想されたテンソルの正解ラベル
+    filename: スパイク除去済みのcsvデータファイル
+    sequence_range: 時系列サイズ
     """
     print("dataset filename = {}".format(filename))
     df = pd.read_csv(filename, header=None)
@@ -72,7 +60,6 @@ def mkSequenceDataforPCA(filename, sequence_range):#[[SEQUENCE_RANGE*2個の18�
         
     return train_x, train_t, new_target
 
-data, target, new_target = mkSequenceDataforPCA('C:\\Users\\yukin\\Downloads\\Median_Nakabayashi_Test.csv', SEQUENCE_RANGE)#new_targetは区切りのない全データに対する新しいラベルを格納．これを学習に使うラベルにする．
 
 def RelabelByPCA(x, labels):#データセット全体に対し，表情遷移1回ごとに区切った新しいラベルリストを生成．
     # 主成分分析（PCA）を実行する
@@ -111,28 +98,23 @@ def RelabelByPCA(x, labels):#データセット全体に対し，表情遷移1�
             break
         """
         if clusters[i] == former_class:#former
-            color = 'r'
+            #color = 'r'
             new_labels.append(former_label)
         elif clusters[i] == latter_class:#latter
-            color = 'b'
+            #color = 'b'
             new_labels.append(latter_label)
         #plt.scatter(i, X_pca[i][0], c=color,marker=marker)
     #plt.show()
     new_labels_list.append(new_labels)
 
+data, target, new_target = mkSequenceDataforPCA('.\\Spike_Removed_csv\\Median_{0}.csv'.format(participant_name), SEQUENCE_RANGE)#new_targetは区切りのない全データに対する新しいラベルを格納．これを学習に使うラベルにする．
 
-      
-#print("target type",type(target))
 for i in range(data.shape[0]):#全ての時系列データセットに対してPCAを実行
     RelabelByPCA(data[i],target[i])
 new_labels_list = np.array(new_labels_list)#変更後のラベルリスト
 old_target = new_target.copy()#変更前のラベル
 
-sequence_range = SEQUENCE_RANGE
-sequence_range = int(sequence_range)
-#print(new_labels_list.shape)
-#print(new_target.shape)
-#print(np.array(label_change_index_list).shape)
+sequence_range = int(SEQUENCE_RANGE)
 
 for i in range(new_labels_list.shape[0]):#1次元リストのラベルデータに書き戻し
     insert_index = label_change_index_list[i]
@@ -140,8 +122,6 @@ for i in range(new_labels_list.shape[0]):#1次元リストのラベルデータ�
     last_index = insert_index+sequence_range
     for j in range(first_index, last_index):#元のラベルをnew_labelで置き換える
         new_target[j] = str(new_labels_list[i][j-first_index])
-
-#print(new_target)
 
 for i in range(sequence_range, new_target.shape[0], sequence_range*2):
     #if not(np.allclose(new_target[i-5:i+5], old_target[i-5:i+5])):
