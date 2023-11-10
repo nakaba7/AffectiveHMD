@@ -13,25 +13,27 @@ from Evaluation_Metric import macro_precision_score, macro_recall_score, macro_f
 from MakeDataSet import mkDataSet
 from DNNModel import NeuralNet
 
-SENSOR_NUM = 16
+"""
+非時系列学習モデルのDNNで表情識別を行う.
+K分割交差検証を行う.
+"""
+
 BATCH_SIZE = 64
 OPTIMIZER_LEARNING_RATE = 1.0e-4
-HIDDEN_DIM = 128
 EPOCH_NUM = 500
-SEQUENCE_TENSOR_LENGTH = 20
 LABEL_SMOOTHING = 0.1
-DROPOUT = 0.3
 MODELPATH = "KFold_DNN_AllData.pth"
 K = 10
+inputfile_name=".\\DataSet\\All10Dataset.csv" #学習するデータセットのcsvファイル
 book = openpyxl.Workbook()
-xlsx_filename = "C:\\Users\\yukin\\Downloads\\MachineLearningResult\\AllData_DNN.xlsx"
+xlsx_filename = ".\\MachineLearningResult\\AllData_DNN.xlsx" #学習結果を書き込むExcelファイル
 book.save(xlsx_filename)
 wb = openpyxl.load_workbook(xlsx_filename)
 ws = wb['Sheet']
 
-def TrainandVal(filename, headdatanum, start_row, start_column):
+def TrainandVal(inputfile_name, headdatanum, start_row, start_column):
     wandb.init(project="Affective HMD DNN")
-    data, target = mkDataSet(filename, headdatanum, is_normalize=False)
+    data, target = mkDataSet(inputfile_name, headdatanum, is_normalize=False)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     train_acc_list = []
     val_acc_list = []
@@ -303,9 +305,8 @@ def TrainandVal(filename, headdatanum, start_row, start_column):
 
 column_count=1
 row_count=1
-filename="C:\\Users\\yukin\\Downloads\\All10Dataset.csv"
-TrainandVal(filename, 2, row_count, column_count)
-TrainandVal(filename, 0, row_count, column_count)
+TrainandVal(inputfile_name, 2, row_count, column_count)
+TrainandVal(inputfile_name, 0, row_count, column_count)
 column_count += 4
 
 
