@@ -11,8 +11,8 @@ def delete_spike(inputfilename, participantname):
     時刻iのデータがスパイクと判定された場合、i-2, i-1, i, i+1, i+2のデータの中央値とすることで、スパイク除去をする.
     データと中央値の絶対値の差が30以上の場合にスパイクと判定される.
 
-    入力: ラベル, 表情, 頭部姿勢の入ったcsvファイル
-    出力: スパイク除去のcsvファイル
+    inputfilename: ラベル, 表情, 頭部姿勢の入ったcsvファイル
+    出力: スパイク除去済のcsvファイル
     """
     
     df = pd.read_csv(inputfilename, header=None)
