@@ -1,6 +1,8 @@
 import serial
-import time
-import  matplotlib.pyplot as plt
+
+"""
+16個の反射型光センサの値をシリアル通信でマイコンから受け取り, デコードする.
+"""
 
 class SerialConnection:
 	def __init__(self, portNum, rate):

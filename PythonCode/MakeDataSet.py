@@ -18,7 +18,6 @@ def zscore(x, axis = None):#標準化
 
 def mkDataSet(filename, headdatanum, is_sequence_dataset = False, is_normalize = False):
     """
-    入力: 
     filename: データを格納したcsvファイル. ラベル1次元, 反射型光センサの値16次元, 頭部姿勢データ headdatanum次元
     headdatanum: 頭部姿勢データの数
     is_sequence_dataset: 時系列を考慮する場合はTrue, しない場合はFalse

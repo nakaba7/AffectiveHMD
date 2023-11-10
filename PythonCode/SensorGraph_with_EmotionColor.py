@@ -1,23 +1,13 @@
 import numpy as np
-from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-import statistics
-import matplotlib.pyplot as plt
-import pandas as pd
-import torch
-from torch import nn, Tensor
-import torch.nn.functional as F
 
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
+"""
+表情遷移の境目を可視化するコード
+入力: 正解ラベル貼替済みのデータセット
+出力: 各表情遷移の境目を可視化したグラフ. 正解ラベルで色分けがされる.
+"""
 
-import math
-from sklearn.metrics import confusion_matrix
-from collections import Counter
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.model_selection import train_test_split
-import itertools
+participant_name = "Nakabayashi" #可視化対象の参加者のデータセット
 
 SENSOR_NUM = 16
 HEAD_DIRECTION_DATA_NUM = 2
@@ -30,7 +20,7 @@ surprised_list = []
 sad_list = []
 angry_list = []
 
-alldata = np.loadtxt('C:\\Users\\yukin\\Downloads\\Relabeled_Arai_DataSet.csv', delimiter=',', dtype='str')
+alldata = np.loadtxt('.\\RelabeledDataSet\\Relabeled_{}_DataSet.csv'.format(participant_name), delimiter=',', dtype='str')
 for i in range(START_INDEX, FIN_INDEX):
     if alldata[i][0] == 'a':
         continue

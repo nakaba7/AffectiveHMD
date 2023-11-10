@@ -4,7 +4,7 @@ from sklearn.cluster import KMeans
 import pandas as pd
 
 """
-正解ラベルを正しく貼り直す．このファイルを実行することで貼り直しが可能．
+主成分分析をした後, K-means法を使うことで正解ラベルを正しく貼り直す. このファイルを実行することで貼り直しが可能.
 """
 
 SENSOR_NUM = 16
@@ -122,6 +122,7 @@ for i in range(new_labels_list.shape[0]):#1次元リストのラベルデータ�
     last_index = insert_index+sequence_range
     for j in range(first_index, last_index):#元のラベルをnew_labelで置き換える
         new_target[j] = str(new_labels_list[i][j-first_index])
+
 
 for i in range(sequence_range, new_target.shape[0], sequence_range*2):
     #if not(np.allclose(new_target[i-5:i+5], old_target[i-5:i+5])):
